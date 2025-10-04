@@ -37,10 +37,10 @@ fn install_bootloader(config: &config::InstallConfig) -> Result<()> {
     all_generations.push(("system".to_string(), system_gens));
 
     // Named profiles
-    for profile in generation::get_profiles()? {
-        let gens = generation::get_generations(&profile, config)?;
-        all_generations.push((profile, gens));
-    }
+    // for profile in generation::get_profiles()? {
+    //     let gens = generation::get_generations(&profile, config)?;
+    //     all_generations.push((profile, gens));
+    // }
 
     // Get last generation for default selection
     let last_gen = *all_generations[0]
