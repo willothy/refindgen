@@ -3,39 +3,53 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "refindgen";
-          version = "0.1.0";
-          src = ./.;
+  outputs = { self, nixpkgs }:
+    let
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+      forAllSystems = nixpkgs.lib.genAttrs systems;
+    in
+    {
+      packages = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          default = pkgs.rustPlatform.buildRustPackage {
+            pname = "refindgen";
+            version = "0.1.0";
+            src = ./.;
 
-          cargoHash = "sha256-QLSkPnEHxuoKfwuncLQlTBCxpAbzBULQZRrV3nhrFC4=";
+            cargoLock.lockFile = ./Cargo.lock;
 
-          meta = with pkgs.lib; {
-            description = "rEFInd bootloader configuration generator for NixOS";
-            license = licenses.mit;
-            mainProgram = "refindgen";
+            meta = with pkgs.lib; {
+              description = "rEFInd bootloader configuration generator for NixOS";
+              license = licenses.mit;
+              mainProgram = "refindgen";
+              platforms = platforms.linux;
+            };
           };
-        };
+        }
+      );
 
-        # Useful for development
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            cargo
-            rustc
-            rust-analyzer
-            rustfmt
-            clippy
-          ];
-        };
-      }
-    );
+      nixosModules.default = import ./module.nix;
+
+      devShells = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              cargo
+              rustc
+              rust-analyzer
+              rustfmt
+              clippy
+            ];
+          };
+        }
+      );
+    };
 }
