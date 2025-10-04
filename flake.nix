@@ -11,28 +11,25 @@
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
+      # Overlay that adds refindgen to pkgs
+      overlays.default = final: prev: {
+        refindgen = final.callPackage ./package.nix { };
+      };
+
+      # Expose packages for each system
       packages = forAllSystems (system:
         let
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ self.overlays.default ];
+          };
         in
         {
-          default = pkgs.rustPlatform.buildRustPackage {
-            pname = "refindgen";
-            version = "0.1.0";
-            src = ./.;
-
-            cargoLock.lockFile = ./Cargo.lock;
-
-            meta = with pkgs.lib; {
-              description = "rEFInd bootloader configuration generator for NixOS";
-              license = licenses.mit;
-              mainProgram = "refindgen";
-              platforms = platforms.linux;
-            };
-          };
+          default = pkgs.refindgen;
         }
       );
 
+      # NixOS module that extends the existing refind module
       nixosModules.default = import ./module.nix;
 
       devShells = forAllSystems (system:
