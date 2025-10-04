@@ -66,7 +66,12 @@ pub fn get_generations(profile: &str, config: &InstallConfig) -> Result<Vec<u64>
             "",
         ])
         .output()
-        .context("Failed to run nix-env")?;
+        .with_context(|| {
+            format!(
+                "Failed to run nix-env for profile path {}",
+                profile_path.display()
+            )
+        })?;
 
     if !output.status.success() {
         anyhow::bail!(
@@ -104,7 +109,8 @@ pub fn generate_config_entry(
     let bootspec = BootSpec::load(&gen_path)?;
 
     // Get generation timestamp
-    let metadata = std::fs::symlink_metadata(&gen_path)?;
+    let metadata = std::fs::symlink_metadata(&gen_path)
+        .with_context(|| format!("Failed to get symlink metadata for {}", gen_path.display()))?;
     let mtime = metadata.modified()?;
     let datetime: DateTime<Local> = mtime.into();
     let timestamp = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
