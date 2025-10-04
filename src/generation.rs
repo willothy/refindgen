@@ -55,7 +55,8 @@ pub fn get_generations(profile: &str, config: &InstallConfig) -> Result<Vec<u64>
     let nix_env = config.nix_path.join("bin/nix-env");
     let profile_path = get_system_path(profile, None, None);
 
-    let output = Command::new(&nix_env)
+    let output = Command::new("sudo")
+        .arg(nix_env)
         .args([
             "--list-generations",
             "-p",
